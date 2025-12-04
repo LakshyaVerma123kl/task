@@ -1,57 +1,59 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { verifyToken } from "./lib/authUtils"; // Assuming authUtils is in lib/authUtils.ts
 
 export async function middleware(request: NextRequest) {
   const token = request.cookies.get("token")?.value;
-  const url = request.nextUrl.pathname;
+  const { pathname } = request.nextUrl;
 
-  // 1. Define routes that do NOT require authentication
-  const unprotectedRoutes = [
+  // Public routes that don't require authentication
+  const publicRoutes = [
     "/",
     "/auth/login",
     "/auth/signup",
-    "/api/auth/login",
-    "/api/auth/signup",
+    "/auth/forgot-password",
   ];
 
-  // If the user is accessing an unprotected route, allow it.
-  if (unprotectedRoutes.includes(url)) {
+  // API routes that don't require authentication
+  const publicApiRoutes = [
+    "/api/auth/login",
+    "/api/auth/signup",
+    "/api/auth/google",
+    "/api/auth/google/callback",
+  ];
+
+  // Check if the route is public
+  const isPublicRoute = publicRoutes.some((route) => pathname === route);
+  const isPublicApiRoute = publicApiRoutes.some((route) =>
+    pathname.startsWith(route)
+  );
+
+  // Allow access to public routes
+  if (isPublicRoute || isPublicApiRoute) {
     return NextResponse.next();
   }
 
-  // 2. Check for token on protected routes
-  if (!token) {
-    // Redirect to login if token is missing
-    return NextResponse.redirect(new URL("/auth/login", request.url));
+  // Protected routes require authentication
+  if (pathname.startsWith("/dashboard") || pathname.startsWith("/api/tasks")) {
+    if (!token) {
+      if (pathname.startsWith("/api/")) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+      return NextResponse.redirect(new URL("/auth/login", request.url));
+    }
   }
 
-  // 3. Verify token and enforce validity
-  // The 'verifyToken' function uses your JWT_SECRET to decode and check expiration.
-  const decoded = verifyToken(token);
-
-  if (!decoded) {
-    // If the token is invalid or expired, clear the cookie and redirect to login
-    const response = NextResponse.redirect(new URL("/auth/login", request.url));
-    response.cookies.delete("token");
-    return response;
-  }
-
-  // 4. Continue to the protected route if authenticated
   return NextResponse.next();
 }
 
-// Configuration to specify which paths the middleware should run on
 export const config = {
   matcher: [
     /*
-     * Match all request paths except for the ones starting with:
+     * Match all request paths except:
      * - _next/static (static files)
      * - _next/image (image optimization files)
-     * - favicon.ico
-     * - /api/ (API routes are handled internally by their own logic, but we must protect all other routes)
+     * - favicon.ico (favicon file)
+     * - public files (images, etc.)
      */
-    "/((?!_next/static|_next/image|favicon.ico|api).*)",
-    "/",
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

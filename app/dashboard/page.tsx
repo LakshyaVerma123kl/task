@@ -35,24 +35,8 @@ export default function Dashboard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [showFilters, setShowFilters] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  // Check authentication on mount
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      router.replace("/auth/login");
-      return;
-    }
-
-    // Set axios default header
-    axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-    setIsAuthenticated(true);
-  }, [router]);
 
   const fetchTasks = useCallback(async () => {
-    if (!isAuthenticated) return;
-
     setIsLoading(true);
     try {
       const res = await axios.get("/api/tasks", {
@@ -64,7 +48,7 @@ export default function Dashboard() {
 
       let filteredTasks = res.data;
 
-      // Filter by priority on client side
+      // Filter by priority on client side (optional, can also be moved to API)
       if (filterPriority !== "All") {
         filteredTasks = filteredTasks.filter(
           (task: Task) => task.priority === filterPriority
@@ -74,24 +58,22 @@ export default function Dashboard() {
       setTasks(filteredTasks);
     } catch (error: any) {
       if (error.response?.status === 401) {
-        localStorage.removeItem("token");
-        delete axios.defaults.headers.common["Authorization"];
+        // Unauthorized - Middleware or API rejected the cookie
         router.replace("/auth/login");
       }
       console.error("Failed to fetch tasks:", error);
     } finally {
       setIsLoading(false);
     }
-  }, [filterStatus, filterPriority, search, router, isAuthenticated]);
+  }, [filterStatus, filterPriority, search, router]);
 
   useEffect(() => {
-    if (!isAuthenticated) return;
-
+    // Debounce search
     const handler = setTimeout(() => {
       fetchTasks();
     }, 300);
     return () => clearTimeout(handler);
-  }, [filterStatus, filterPriority, search, fetchTasks, isAuthenticated]);
+  }, [filterStatus, filterPriority, search, fetchTasks]);
 
   const handleCreateOrUpdate = async (data: any) => {
     try {
@@ -118,34 +100,19 @@ export default function Dashboard() {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    delete axios.defaults.headers.common["Authorization"];
-    document.cookie = "token=; Max-Age=0; path=/;";
-    router.replace("/");
+  const handleLogout = async () => {
+    try {
+      await axios.post("/api/auth/logout");
+      // Force reload to clear any client state and hit middleware
+      window.location.href = "/";
+    } catch (error) {
+      console.error("Logout failed", error);
+    }
   };
 
   const openEditModal = (task: Task) => {
     setEditingTask(task);
     setIsModalOpen(true);
-  };
-
-  // Don't render dashboard until authenticated
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="animate-spin h-12 w-12 text-blue-600" />
-      </div>
-    );
-  }
-
-  // Get task statistics
-  const stats = {
-    total: tasks.length,
-    todo: tasks.filter((t) => t.status === "To Do").length,
-    inProgress: tasks.filter((t) => t.status === "In Progress").length,
-    done: tasks.filter((t) => t.status === "Done").length,
   };
 
   return (
@@ -176,7 +143,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border-2 border-gray-100 dark:border-gray-700">
             <p className="text-3xl font-bold text-gray-900 dark:text-white">
-              {stats.total}
+              {tasks.length}
             </p>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
               Total Tasks
@@ -184,7 +151,7 @@ export default function Dashboard() {
           </div>
           <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border-2 border-blue-100 dark:border-blue-900">
             <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-              {stats.todo}
+              {tasks.filter((t) => t.status === "To Do").length}
             </p>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
               To Do
@@ -192,7 +159,7 @@ export default function Dashboard() {
           </div>
           <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border-2 border-yellow-100 dark:border-yellow-900">
             <p className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">
-              {stats.inProgress}
+              {tasks.filter((t) => t.status === "In Progress").length}
             </p>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
               In Progress
@@ -200,7 +167,7 @@ export default function Dashboard() {
           </div>
           <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border-2 border-green-100 dark:border-green-900">
             <p className="text-3xl font-bold text-green-600 dark:text-green-400">
-              {stats.done}
+              {tasks.filter((t) => t.status === "Done").length}
             </p>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
               Completed

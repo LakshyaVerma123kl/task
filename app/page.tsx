@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/landing/Navbar";
 import Hero from "@/components/landing/Hero";
@@ -9,42 +9,24 @@ import Footer from "@/components/landing/Footer";
 
 export default function Home() {
   const router = useRouter();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [mounted, setMounted] = useState(false);
 
-  // Check login status on mount
   useEffect(() => {
     setMounted(true);
-    const token = localStorage.getItem("token");
-    if (token) {
-      setIsLoggedIn(true);
-    }
   }, []);
 
   const handleLogout = async () => {
     try {
-      // Call logout API endpoint
       await fetch("/api/auth/logout", { method: "POST" });
+      router.refresh();
     } catch (error) {
       console.error("Logout error:", error);
-    } finally {
-      // Clear local storage and state
-      localStorage.removeItem("token");
-      setIsLoggedIn(false);
-
-      // Remove cookie
-      document.cookie = "token=; Max-Age=0; path=/;";
-
-      router.refresh();
     }
   };
 
   const handleGetStarted = () => {
-    if (isLoggedIn) {
-      router.push("/dashboard");
-    } else {
-      router.push("/auth/signup");
-    }
+    // We let the dashboard or login page handle the redirect logic based on cookie presence
+    router.push("/dashboard");
   };
 
   // Prevent hydration mismatch
@@ -52,10 +34,12 @@ export default function Home() {
     return null;
   }
 
+  // Note: We don't check isLoggedIn here via localStorage anymore.
+  // The Navbar or Hero can link to Dashboard, which will redirect if not logged in.
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 transition-colors">
-      <Navbar isLoggedIn={isLoggedIn} onLogout={handleLogout} />
-      <Hero onGetStarted={handleGetStarted} isLoggedIn={isLoggedIn} />
+      <Navbar isLoggedIn={false} onLogout={handleLogout} />
+      <Hero onGetStarted={handleGetStarted} isLoggedIn={false} />
       <Features />
       <Footer />
     </div>
