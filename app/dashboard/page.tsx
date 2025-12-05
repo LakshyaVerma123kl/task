@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 
+// ... Interface Task remains the same ...
 interface Task {
   _id: string;
   title: string;
@@ -27,6 +28,7 @@ interface Task {
 
 export default function Dashboard() {
   const router = useRouter();
+  // ... state definitions remain the same ...
   const [tasks, setTasks] = useState<Task[]>([]);
   const [filterStatus, setFilterStatus] = useState("All");
   const [filterPriority, setFilterPriority] = useState("All");
@@ -39,16 +41,17 @@ export default function Dashboard() {
   const fetchTasks = useCallback(async () => {
     setIsLoading(true);
     try {
+      // NOTE: No headers config needed. Browser sends cookies automatically.
       const res = await axios.get("/api/tasks", {
         params: {
           status: filterStatus === "All" ? undefined : filterStatus,
           search: search || undefined,
         },
+        withCredentials: true, // Ensure cookies are sent
       });
 
       let filteredTasks = res.data;
 
-      // Filter by priority on client side (optional, can also be moved to API)
       if (filterPriority !== "All") {
         filteredTasks = filteredTasks.filter(
           (task: Task) => task.priority === filterPriority
@@ -58,7 +61,6 @@ export default function Dashboard() {
       setTasks(filteredTasks);
     } catch (error: any) {
       if (error.response?.status === 401) {
-        // Unauthorized - Middleware or API rejected the cookie
         router.replace("/auth/login");
       }
       console.error("Failed to fetch tasks:", error);
@@ -67,13 +69,16 @@ export default function Dashboard() {
     }
   }, [filterStatus, filterPriority, search, router]);
 
+  // ... Rest of the file remains the same ...
+  // Ensure all axios calls (create, update, delete, logout) use withCredentials if needed,
+  // though typically simple same-origin requests do it by default.
+
   useEffect(() => {
-    // Debounce search
     const handler = setTimeout(() => {
       fetchTasks();
     }, 300);
     return () => clearTimeout(handler);
-  }, [filterStatus, filterPriority, search, fetchTasks]);
+  }, [fetchTasks]);
 
   const handleCreateOrUpdate = async (data: any) => {
     try {
@@ -103,8 +108,8 @@ export default function Dashboard() {
   const handleLogout = async () => {
     try {
       await axios.post("/api/auth/logout");
-      // Force reload to clear any client state and hit middleware
-      window.location.href = "/";
+      router.push("/");
+      router.refresh();
     } catch (error) {
       console.error("Logout failed", error);
     }
@@ -116,6 +121,7 @@ export default function Dashboard() {
   };
 
   return (
+    // ... JSX remains exactly the same ...
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 transition-colors">
       {/* Header */}
       <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-40 backdrop-blur-lg bg-white/90 dark:bg-gray-900/90">

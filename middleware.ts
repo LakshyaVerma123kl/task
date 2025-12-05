@@ -2,10 +2,15 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
-  const token = request.cookies.get("token")?.value;
+  const tokenCookie = request.cookies.get("token")?.value;
+  const authHeader = request.headers.get("authorization");
+
+  // Check if either a cookie OR a valid header exists
+  const hasValidAuth =
+    tokenCookie || (authHeader && authHeader.startsWith("Bearer "));
+
   const { pathname } = request.nextUrl;
 
-  // Public routes that don't require authentication
   const publicRoutes = [
     "/",
     "/auth/login",
@@ -13,7 +18,6 @@ export async function middleware(request: NextRequest) {
     "/auth/forgot-password",
   ];
 
-  // API routes that don't require authentication
   const publicApiRoutes = [
     "/api/auth/login",
     "/api/auth/signup",
@@ -21,20 +25,16 @@ export async function middleware(request: NextRequest) {
     "/api/auth/google/callback",
   ];
 
-  // Check if the route is public
-  const isPublicRoute = publicRoutes.some((route) => pathname === route);
-  const isPublicApiRoute = publicApiRoutes.some((route) =>
-    pathname.startsWith(route)
-  );
-
-  // Allow access to public routes
-  if (isPublicRoute || isPublicApiRoute) {
+  if (
+    publicRoutes.some((route) => pathname === route) ||
+    publicApiRoutes.some((route) => pathname.startsWith(route))
+  ) {
     return NextResponse.next();
   }
 
-  // Protected routes require authentication
+  // Protected routes
   if (pathname.startsWith("/dashboard") || pathname.startsWith("/api/tasks")) {
-    if (!token) {
+    if (!hasValidAuth) {
       if (pathname.startsWith("/api/")) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
       }
@@ -47,13 +47,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public files (images, etc.)
-     */
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

@@ -1,17 +1,25 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { connectDB } from "@/lib/db";
 import Task from "@/models/Task";
 import jwt from "jsonwebtoken";
 
 // Helper function to verify JWT and extract userId
-function getUserIdFromToken(req: Request): string | null {
+function getUserIdFromToken(req: NextRequest): string | null {
   try {
-    const authHeader = req.headers.get("authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return null;
+    // 1. Try reading from cookie (Primary method for this app)
+    const tokenCookie = req.cookies.get("token");
+    let token = tokenCookie?.value;
+
+    // 2. Fallback: Try reading from Authorization header
+    if (!token) {
+      const authHeader = req.headers.get("authorization");
+      if (authHeader && authHeader.startsWith("Bearer ")) {
+        token = authHeader.substring(7);
+      }
     }
 
-    const token = authHeader.substring(7);
+    if (!token) return null;
+
     const decoded = jwt.verify(
       token,
       process.env.JWT_SECRET || "your-secret-key"
@@ -25,31 +33,27 @@ function getUserIdFromToken(req: Request): string | null {
 
 /**
  * GET /api/tasks
- * Fetch all tasks for authenticated user with optional filters
+ * Fetch all tasks for authenticated user
  */
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   try {
     await connectDB();
 
-    // Extract user ID from JWT token
     const userId = getUserIdFromToken(req);
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Search and Filter Logic
-    const { searchParams } = new URL(req.url);
+    const searchParams = req.nextUrl.searchParams;
     const status = searchParams.get("status");
     const search = searchParams.get("search");
 
     let query: any = { userId };
 
-    // Filter by status
     if (status && status !== "All") {
       query.status = status;
     }
 
-    // Search in title and description
     if (search) {
       query.$or = [
         { title: { $regex: search, $options: "i" } },
@@ -70,13 +74,12 @@ export async function GET(req: Request) {
 
 /**
  * POST /api/tasks
- * Create a new task for authenticated user
+ * Create a new task
  */
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     await connectDB();
 
-    // Extract user ID from JWT token
     const userId = getUserIdFromToken(req);
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -84,27 +87,8 @@ export async function POST(req: Request) {
 
     const body = await req.json();
 
-    // Basic validation
     if (!body.title || body.title.trim() === "") {
       return NextResponse.json({ error: "Title is required" }, { status: 400 });
-    }
-
-    // Validate status
-    const validStatuses = ["To Do", "In Progress", "Done"];
-    if (body.status && !validStatuses.includes(body.status)) {
-      return NextResponse.json(
-        { error: "Invalid status value" },
-        { status: 400 }
-      );
-    }
-
-    // Validate priority
-    const validPriorities = ["Low", "Medium", "High"];
-    if (body.priority && !validPriorities.includes(body.priority)) {
-      return NextResponse.json(
-        { error: "Invalid priority value" },
-        { status: 400 }
-      );
     }
 
     const newTask = await Task.create({
