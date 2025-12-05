@@ -7,17 +7,7 @@ export default function Footer() {
           <p className="text-gray-400 dark:text-gray-500">
             Organize your tasks, boost your productivity
           </p>
-          <div className="flex justify-center gap-6 text-sm text-gray-400 dark:text-gray-500">
-            <a href="#" className="hover:text-white transition-colors">
-              Privacy Policy
-            </a>
-            <a href="#" className="hover:text-white transition-colors">
-              Terms of Service
-            </a>
-            <a href="#" className="hover:text-white transition-colors">
-              Contact
-            </a>
-          </div>
+
           <p className="text-gray-500 dark:text-gray-600 text-sm pt-4 border-t border-gray-800 dark:border-gray-900">
             &copy; {new Date().getFullYear()} TaskTracker. All rights reserved.
           </p>

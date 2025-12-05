@@ -1,3 +1,4 @@
+// app/dashboard/page.tsx
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
@@ -14,7 +15,7 @@ import {
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 
-// ... Interface Task remains the same ...
+// Define Task Interface cleanly
 interface Task {
   _id: string;
   title: string;
@@ -28,7 +29,6 @@ interface Task {
 
 export default function Dashboard() {
   const router = useRouter();
-  // ... state definitions remain the same ...
   const [tasks, setTasks] = useState<Task[]>([]);
   const [filterStatus, setFilterStatus] = useState("All");
   const [filterPriority, setFilterPriority] = useState("All");
@@ -41,24 +41,17 @@ export default function Dashboard() {
   const fetchTasks = useCallback(async () => {
     setIsLoading(true);
     try {
-      // NOTE: No headers config needed. Browser sends cookies automatically.
+      // Pass all filters to the API
       const res = await axios.get("/api/tasks", {
         params: {
           status: filterStatus === "All" ? undefined : filterStatus,
+          priority: filterPriority === "All" ? undefined : filterPriority,
           search: search || undefined,
         },
-        withCredentials: true, // Ensure cookies are sent
+        withCredentials: true,
       });
 
-      let filteredTasks = res.data;
-
-      if (filterPriority !== "All") {
-        filteredTasks = filteredTasks.filter(
-          (task: Task) => task.priority === filterPriority
-        );
-      }
-
-      setTasks(filteredTasks);
+      setTasks(res.data);
     } catch (error: any) {
       if (error.response?.status === 401) {
         router.replace("/auth/login");
@@ -68,10 +61,6 @@ export default function Dashboard() {
       setIsLoading(false);
     }
   }, [filterStatus, filterPriority, search, router]);
-
-  // ... Rest of the file remains the same ...
-  // Ensure all axios calls (create, update, delete, logout) use withCredentials if needed,
-  // though typically simple same-origin requests do it by default.
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -108,6 +97,7 @@ export default function Dashboard() {
   const handleLogout = async () => {
     try {
       await axios.post("/api/auth/logout");
+      // Use refresh to clear server context
       router.push("/");
       router.refresh();
     } catch (error) {
@@ -121,7 +111,6 @@ export default function Dashboard() {
   };
 
   return (
-    // ... JSX remains exactly the same ...
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 transition-colors">
       {/* Header */}
       <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-40 backdrop-blur-lg bg-white/90 dark:bg-gray-900/90">

@@ -1,3 +1,4 @@
+// models/Task.ts
 import mongoose from "mongoose";
 
 const TaskSchema = new mongoose.Schema(
@@ -50,15 +51,9 @@ const TaskSchema = new mongoose.Schema(
   }
 );
 
-// Compound index for efficient querying
+// Indexes
 TaskSchema.index({ userId: 1, createdAt: -1 });
 TaskSchema.index({ userId: 1, status: 1 });
 TaskSchema.index({ userId: 1, priority: 1 });
-
-// Virtual for checking if task is overdue
-TaskSchema.virtual("isOverdue").get(function () {
-  if (!this.dueDate || this.status === "Done") return false;
-  return new Date() > this.dueDate;
-});
 
 export default mongoose.models.Task || mongoose.model("Task", TaskSchema);

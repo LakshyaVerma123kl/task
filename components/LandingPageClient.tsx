@@ -1,3 +1,4 @@
+// components/LandingPageClient.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -22,8 +23,6 @@ export default function LandingPageClient({
   const handleLogout = async () => {
     try {
       await fetch("/api/auth/logout", { method: "POST" });
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
       router.refresh();
     } catch (error) {
       console.error("Logout error:", error);

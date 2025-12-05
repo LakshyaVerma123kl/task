@@ -1,3 +1,4 @@
+// components/TaskForm.tsx
 "use client";
 import { useState, useEffect } from "react";
 import { X } from "lucide-react";
@@ -23,14 +24,26 @@ export default function TaskForm({
 
   useEffect(() => {
     if (initialData) {
+      // Safe date formatting: Extract YYYY-MM-DD from UTC date string
+      let formattedDate = "";
+      if (initialData.dueDate) {
+        try {
+          // If the date is already in UTC string format, taking the first 10 chars is safer
+          // than converting to local Date object which might shift day
+          formattedDate = new Date(initialData.dueDate)
+            .toISOString()
+            .split("T")[0];
+        } catch (e) {
+          console.error("Invalid date:", initialData.dueDate);
+        }
+      }
+
       setFormData({
         title: initialData.title || "",
         description: initialData.description || "",
         status: initialData.status || "To Do",
         priority: initialData.priority || "Medium",
-        dueDate: initialData.dueDate
-          ? new Date(initialData.dueDate).toISOString().split("T")[0]
-          : "",
+        dueDate: formattedDate,
       });
     }
   }, [initialData]);

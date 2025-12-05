@@ -1,18 +1,15 @@
+// app/api/auth/signup/route.ts
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import User from "@/models/User";
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
-/**
- * POST /api/auth/signup
- * Register a new user
- */
 export async function POST(req: Request) {
   try {
     await connectDB();
     const { email, password } = await req.json();
 
-    // Validation
     if (!email || !password) {
       return NextResponse.json(
         { error: "Email and password are required" },
@@ -20,7 +17,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return NextResponse.json(
@@ -29,7 +25,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Password validation
     if (password.length < 6) {
       return NextResponse.json(
         { error: "Password must be at least 6 characters long" },
@@ -37,7 +32,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Check if user already exists
     const existingUser = await User.findOne({ email: email.toLowerCase() });
     if (existingUser) {
       return NextResponse.json(
@@ -46,25 +40,40 @@ export async function POST(req: Request) {
       );
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Create user
     const user = await User.create({
       email: email.toLowerCase(),
       password: hashedPassword,
     });
 
-    return NextResponse.json(
+    // Auto-login: Generate Token
+    const token = jwt.sign(
+      { userId: user._id, email: user.email },
+      process.env.JWT_SECRET || "your-secret-key",
+      { expiresIn: "7d" }
+    );
+
+    const response = NextResponse.json(
       {
         message: "User created successfully",
-        user: {
-          id: user._id,
-          email: user.email,
-        },
+        user: { id: user._id, email: user.email },
       },
       { status: 201 }
     );
+
+    // Set Cookie
+    response.cookies.set({
+      name: "token",
+      value: token,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60,
+      path: "/",
+    });
+
+    return response;
   } catch (error) {
     console.error("Signup error:", error);
     return NextResponse.json(

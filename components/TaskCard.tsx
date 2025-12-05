@@ -1,3 +1,4 @@
+// components/TaskCard.tsx
 "use client";
 
 interface Task {
@@ -35,10 +36,12 @@ const TaskCard = ({ task, onDelete, onUpdate }: TaskCardProps) => {
 
   const formatDate = (date?: string) => {
     if (!date) return null;
+    // Use UTC to prevent day shifting due to timezone
     return new Date(date).toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
       year: "numeric",
+      timeZone: "UTC",
     });
   };
 
@@ -94,7 +97,7 @@ const TaskCard = ({ task, onDelete, onUpdate }: TaskCardProps) => {
       </div>
 
       <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700/50 text-xs text-gray-500 dark:text-gray-500">
-        Created: {formatDate(task.createdAt)}
+        Created: {new Date(task.createdAt).toLocaleDateString()}
       </div>
     </div>
   );

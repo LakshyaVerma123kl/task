@@ -1,22 +1,13 @@
+// app/api/tasks/route.ts
 import { NextResponse, NextRequest } from "next/server";
 import { connectDB } from "@/lib/db";
 import Task from "@/models/Task";
 import jwt from "jsonwebtoken";
 
-// Helper function to verify JWT and extract userId
 function getUserIdFromToken(req: NextRequest): string | null {
   try {
-    // 1. Try reading from cookie (Primary method for this app)
     const tokenCookie = req.cookies.get("token");
-    let token = tokenCookie?.value;
-
-    // 2. Fallback: Try reading from Authorization header
-    if (!token) {
-      const authHeader = req.headers.get("authorization");
-      if (authHeader && authHeader.startsWith("Bearer ")) {
-        token = authHeader.substring(7);
-      }
-    }
+    const token = tokenCookie?.value;
 
     if (!token) return null;
 
@@ -26,15 +17,10 @@ function getUserIdFromToken(req: NextRequest): string | null {
     ) as { userId: string };
     return decoded.userId;
   } catch (error) {
-    console.error("Token verification error:", error);
     return null;
   }
 }
 
-/**
- * GET /api/tasks
- * Fetch all tasks for authenticated user
- */
 export async function GET(req: NextRequest) {
   try {
     await connectDB();
@@ -46,12 +32,17 @@ export async function GET(req: NextRequest) {
 
     const searchParams = req.nextUrl.searchParams;
     const status = searchParams.get("status");
+    const priority = searchParams.get("priority");
     const search = searchParams.get("search");
 
     let query: any = { userId };
 
     if (status && status !== "All") {
       query.status = status;
+    }
+
+    if (priority && priority !== "All") {
+      query.priority = priority;
     }
 
     if (search) {
@@ -72,10 +63,6 @@ export async function GET(req: NextRequest) {
   }
 }
 
-/**
- * POST /api/tasks
- * Create a new task
- */
 export async function POST(req: NextRequest) {
   try {
     await connectDB();
