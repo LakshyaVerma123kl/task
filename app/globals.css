@@ -3,6 +3,10 @@
 /* Tailwind v4 configuration */
 @variant dark (&:where(.dark, .dark *));
 
+/* Custom breakpoint for extra small screens (375px+) */
+@custom-media --xs (min-width: 375px);
+@variant xs (@media (--xs));
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
     "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
@@ -96,10 +100,17 @@ html {
   scroll-behavior: smooth;
 }
 
-/* Custom scrollbar */
+/* Custom scrollbar - Responsive width */
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
+}
+
+@media (min-width: 768px) {
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
 }
 
 ::-webkit-scrollbar-track {
@@ -150,4 +161,50 @@ html {
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* Touch-friendly tap targets on mobile */
+@media (max-width: 640px) {
+  button,
+  a,
+  input,
+  select,
+  textarea {
+    min-height: 44px; /* iOS minimum tap target */
+  }
+}
+
+/* Prevent text overflow on small screens */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  hyphens: auto;
+}
+
+/* Better touch scrolling on mobile */
+* {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Improve performance on mobile */
+.animate-fade-in,
+.animate-slide-up,
+.animate-slide-down,
+.animate-scale-in,
+.animate-in {
+  will-change: transform, opacity;
+}
+
+/* Responsive font smoothing */
+@media (max-width: 640px) {
+  body {
+    -webkit-text-size-adjust: 100%;
+    -moz-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
 }

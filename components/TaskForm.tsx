@@ -24,12 +24,9 @@ export default function TaskForm({
 
   useEffect(() => {
     if (initialData) {
-      // Safe date formatting: Extract YYYY-MM-DD from UTC date string
       let formattedDate = "";
       if (initialData.dueDate) {
         try {
-          // If the date is already in UTC string format, taking the first 10 chars is safer
-          // than converting to local Date object which might shift day
           formattedDate = new Date(initialData.dueDate)
             .toISOString()
             .split("T")[0];
@@ -54,31 +51,37 @@ export default function TaskForm({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border-2 border-gray-200 dark:border-gray-700 animate-scale-in">
-        <div className="px-6 py-5 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-900">
-          <h2 className="text-2xl font-bold text-gray-800 dark:text-white">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 z-50 animate-in">
+      <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-[95%] sm:max-w-lg max-h-[90vh] overflow-hidden border-2 border-gray-200 dark:border-gray-700 animate-scale-in flex flex-col">
+        {/* Header - Responsive */}
+        <div className="px-4 sm:px-6 py-3.5 sm:py-5 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-900 shrink-0">
+          <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 dark:text-white">
             {initialData ? "✏️ Edit Task" : "✨ Create New Task"}
           </h2>
           <button
             onClick={onCancel}
-            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors p-2 rounded-full hover:bg-white/50 dark:hover:bg-gray-700/50"
+            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors p-1.5 sm:p-2 rounded-full hover:bg-white/50 dark:hover:bg-gray-700/50"
             aria-label="Close"
           >
-            <X size={24} />
+            <X size={20} className="sm:w-6 sm:h-6" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+        {/* Form - Scrollable on small screens */}
+        <form
+          onSubmit={handleSubmit}
+          className="p-4 sm:p-6 space-y-3.5 sm:space-y-5 overflow-y-auto flex-1"
+        >
+          {/* Title */}
           <div>
-            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-xs sm:text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">
               Title <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               required
               placeholder="Enter task title"
-              className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 outline-none transition-all placeholder-gray-400 dark:placeholder-gray-500"
+              className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 outline-none transition-all placeholder-gray-400 dark:placeholder-gray-500"
               value={formData.title}
               onChange={(e) =>
                 setFormData({ ...formData, title: e.target.value })
@@ -86,14 +89,15 @@ export default function TaskForm({
             />
           </div>
 
+          {/* Description */}
           <div>
-            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-xs sm:text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">
               Description
             </label>
             <textarea
-              rows={4}
+              rows={3}
               placeholder="Add task details (optional)"
-              className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 outline-none transition-all resize-none placeholder-gray-400 dark:placeholder-gray-500"
+              className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 outline-none transition-all resize-none placeholder-gray-400 dark:placeholder-gray-500"
               value={formData.description}
               onChange={(e) =>
                 setFormData({ ...formData, description: e.target.value })
@@ -101,13 +105,14 @@ export default function TaskForm({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          {/* Status and Priority - Responsive Grid */}
+          <div className="grid grid-cols-1 xs:grid-cols-2 gap-3 sm:gap-4">
             <div>
-              <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-xs sm:text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">
                 Status
               </label>
               <select
-                className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 outline-none transition-all cursor-pointer"
+                className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 outline-none transition-all cursor-pointer"
                 value={formData.status}
                 onChange={(e) =>
                   setFormData({ ...formData, status: e.target.value })
@@ -120,11 +125,11 @@ export default function TaskForm({
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-xs sm:text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">
                 Priority
               </label>
               <select
-                className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 outline-none transition-all cursor-pointer"
+                className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 outline-none transition-all cursor-pointer"
                 value={formData.priority}
                 onChange={(e) =>
                   setFormData({ ...formData, priority: e.target.value })
@@ -137,36 +142,39 @@ export default function TaskForm({
             </div>
           </div>
 
+          {/* Due Date */}
           <div>
-            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-xs sm:text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">
               Due Date
             </label>
             <input
               type="date"
-              className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 outline-none transition-all"
+              className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 outline-none transition-all"
               value={formData.dueDate}
               onChange={(e) =>
                 setFormData({ ...formData, dueDate: e.target.value })
               }
             />
           </div>
-
-          <div className="flex gap-3 pt-4">
-            <button
-              type="button"
-              onClick={onCancel}
-              className="flex-1 px-6 py-3 text-base font-bold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-all duration-200"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="flex-1 px-6 py-3 text-base font-bold text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
-            >
-              {initialData ? "Update Task" : "Create Task"}
-            </button>
-          </div>
         </form>
+
+        {/* Action Buttons - Fixed at bottom, Responsive */}
+        <div className="flex gap-2 sm:gap-3 p-4 sm:p-6 pt-0 shrink-0">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="flex-1 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-all duration-200"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            onClick={handleSubmit}
+            className="flex-1 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
+          >
+            {initialData ? "Update" : "Create"}
+          </button>
+        </div>
       </div>
     </div>
   );
